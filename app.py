@@ -1,6 +1,4 @@
-#################################################
 # Dependencies
-#################################################
 
 import numpy as np
 import datetime as dt
@@ -13,9 +11,7 @@ from sqlalchemy import create_engine, func
 from flask import Flask, jsonify
 
 
-#################################################
 # Database Setup
-#################################################
 engine = create_engine("sqlite:///Resources/hawaii.sqlite")
 
 # Reflect an existing database into a new model
@@ -27,15 +23,10 @@ Base.prepare(engine, reflect=True)
 Station = Base.classes.station
 Measurement = Base.classes.measurement
 
-#################################################
 # Flask Setup
-#################################################
 app = Flask(__name__)
 
-
-#################################################
 # Flask Routes
-#################################################
 
 @app.route("/")
 def welcome():
@@ -61,13 +52,12 @@ def precipitation():
     # Create our session (link) from Python to the DB
     session = Session(engine)
 
-    # Query all the precipitation measurements
+    # Query precipitation measurements
     result = session.query(Measurement.date, Measurement.prcp).all()
     
     # Close Session
     session.close()
-    # Create a dictionary from the row data and append to a list of all_passengers
-        
+
     # Create a list of dictionaries with all the precipitation measurements
     all_prcp = []
     for date, prcp in result:
@@ -84,7 +74,7 @@ def stations():
     # Create our session (link) from Python to the DB
     session = Session(engine)
 
-    # Find out all the station
+    # Find out all the stations
     stations = session.query(Station.station).distinct().all()
     
     # Close Session
@@ -112,16 +102,16 @@ def tobs():
     last_date = dt.datetime.strptime(recent_date.date, '%Y-%m-%d').date()
 
     # Retrieve the last 12 months of temperature data
-    query_date = last_date - dt.timedelta(days=364)
+    year_earlier = last_date - dt.timedelta(days=365)
 
     # Set up the list for query and find out the most active station
-    active_station_lst = [Measurement.station, func.count(Measurement.station)]
-    active_station = session.query(*active_station_lst).group_by(Measurement.station).\
+    active_station_list = [Measurement.station, func.count(Measurement.station)]
+    active_station = session.query(*active_station_list).group_by(Measurement.station).\
                     order_by(func.count(Measurement.station).desc()).first().station
 
     # Pick out last 12 months of temperature measurements of the most active station throughout 
     active_station_temp = session.query(Measurement.date, Measurement.tobs).\
-                        filter(func.strftime('%Y-%m-%d', Measurement.date) > query_date).\
+                        filter(func.strftime('%Y-%m-%d', Measurement.date) > year_earlier).\
                         filter(Measurement.station == active_station).all()
     
     # Close Session
@@ -145,7 +135,7 @@ def date_start(start):
     session = Session(engine)
 
     # Change the date in string format to datatime.date
-    query_date = dt.datetime.strptime(start, '%Y-%m-%d').date()
+    year_earlier = dt.datetime.strptime(start, '%Y-%m-%d').date()
     
     # Set up the list for query
     temp_list = [func.min(Measurement.tobs), 
@@ -154,7 +144,7 @@ def date_start(start):
 
     # Filter out the measurements between the query date
     date_temp = session.query(*temp_list).\
-                filter(func.strftime('%Y-%m-%d', Measurement.date) >= query_date).all()
+                filter(func.strftime('%Y-%m-%d', Measurement.date) >= year_earlier).all()
     
     # Close Session
     session.close()
